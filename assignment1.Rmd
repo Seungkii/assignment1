@@ -12,6 +12,7 @@ data = data.frame(x, y)
 write.csv(data, "data/data.csv", row.names = FALSE)
 ```
 
+
 1-(d)
 https://github.com/Seungkii/assignment1
 
@@ -52,4 +53,433 @@ bubble_sort(x, decreasing = FALSE)
 bubble_sort(x, decreasing = TRUE)
 ```
 2-(b)
+```{r}
+quick_sort = function(vec, decreasing = FALSE){
+  n = length(vec)
+  
+  if (n < 2) {
+    return(vec)
+  }
+  
+  pivot = vec[n/2]
+  
+  if (decreasing == FALSE){
+    left = vec[vec < pivot]
+    middle = vec[vec == pivot]
+    right = vec[vec > pivot]
+    return(c(quick_sort(left, decreasing = FALSE), middle, quick_sort(right, decreasing = FALSE)))
+  } else {
+    left = vec[vec > pivot]
+    middle = vec[vec == pivot]
+    right = vec[vec < pivot]
+    return(c(quick_sort(left, decreasing = TRUE), middle, quick_sort(right, decreasing = TRUE)))
+  }
+}
+```
+
+```{r}
+set.seed(1)
+x = runif(10)
+```
+
+```{r}
+quick_sort(x, decreasing = FALSE)
+```
+```{r}
+quick_sort(x, decreasing = TRUE)
+```
+3-(a)
+```{r}
+derivative = function(f, x, h, method){
+  n = length(x)
+  d = numeric(n)
+  if (method == "forward"){
+    for (i in 1:n){
+      d[i] = (f(x[i] + h) - f(x[i])) / h
+    }
+  }
+  else if (method == "backward"){
+    for (i in 1:n){
+      d[i] = (f(x[i]) - f(x[i] - h)) / h
+    }
+  }
+  else if (method == "central"){
+    for (i in 1:n){
+      d[i] = (f(x[i] + h) - f(x[i] - h)) / (2*h)
+    }
+  }
+  return(d)
+}
+```
+
+```{r}
+h = 1e-6
+x = seq(0, 2*pi, length.out = 100)
+f = function(x) cos(x)-x
+```
+
+```{r}
+d_forward = derivative(f, x, h, "forward")
+d_backward = derivative(f, x, h, "backward")
+d_central = derivative(f, x, h, "central")
+d_true = function(x) -sin(x) - 1
+
+d = data.frame(x = rep(x, 4),
+               y = c(d_true(x), d_forward, d_backward, d_central),
+               method = rep(c("True", "Forward", "Backward", "Central"), each = length(x)))
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(d, aes(x, y, color = method)) +
+  geom_line(linewidth = 1) +
+  labs(x = "x", y = "y", color = "Method") +
+  theme_minimal()
+```
+3-(b)
+```{r}
+NR = function(f, fprime, x0, maxiter, h, epsilon){
+  x = x0
+  for (i in 1:maxiter){
+    if (is.null(fprime)){
+      d = (f(x+h)-f(x-h))/(2*h)
+    }
+    else{
+      d = fprime(x)
+    }
+    
+    x_new = x - f(x)/d
+    
+    if (abs(x - x_new) < epsilon){
+      return(x_new)
+    }
+    else{
+      x = x_new
+    }
+  }
+  return(x)
+}
+```
+
+3-(c)
+```{r}
+f = function(x) cos(x)-x
+fprime = NULL
+maxiter = 100
+h = 1e-6
+epsilon = 1e-10
+x0 = 0.5
+```
+
+```{r}
+NR(f, fprime, x0, maxiter, h, epsilon)
+```
+```{r}
+fprime = function(x) -sin(x) - 1
+NR(f, fprime, x0, maxiter, h, epsilon)
+```
+4-(a)
+```{r}
+left_rectangle = function(f, a, b, n){
+  h = (b-a)/n
+  x = numeric(n)
+  fx = numeric(n)
+  sum = 0
+  for (i in 1:n){
+    x[i] = a + (i-1)*h
+    fx[i] = f(x[i])
+  }
+  for (i in 1:(n)){
+    sum = sum + fx[i]
+  }
+  
+  result = h * sum
+  return(result)
+}
+```
+
+4-(b)
+```{r}
+trapezoid = function(f, a, b, n){
+  h = (b-a)/n
+  x = numeric(n+1)
+  fx = numeric(n+1)
+  sum = 0
+  for (i in 1:(n+1)){
+    x[i] = a + (i-1)*h
+    fx[i] = f(x[i])
+  }
+  for (i in 2:n){
+    sum = sum + fx[i]
+  }
+  
+  result = (h/2) * (fx[1] + 2*sum + fx[n+1])
+  return(result)
+}
+```
+
+4-(c)
+```{r}
+simpson = function(f, a, b, n){
+  if (n %% 2 != 0){
+    stop("n is not even")
+  }
+  
+  h = (b-a)/n
+  x = numeric(n+1)
+  fx = numeric(n+1)
+  sum1 = 0
+  sum2 = 0
+  
+  for (i in 1:(n+1)){
+    x[i] = a + (i-1)*h
+    fx[i] = f(x[i])
+  }
+  
+  for (i in 2:n){
+    if (i %% 2 == 0){
+      sum1 = sum1 + fx[i]
+    }
+    else{
+      sum2 = sum2 + fx[i]
+    }
+  }
+  
+  result = (h / 3) * (fx[1] + 4 * sum1 + 2 * sum2 + fx[n+1])
+  return(result)
+}
+```
+
+4-(d)
+```{r}
+f = function(x) sin(x)
+a = 0
+b = pi
+n = 100
+```
+
+```{r}
+left_rectangle(f, a, b, n)
+```
+```{r}
+trapezoid(f, a, b, n)
+```
+```{r}
+simpson(f, a, b, n)
+```
+4-(e)
+```{r}
+f = function(x) sin(x)
+a = 0
+b = pi
+
+n_values = c(10, 30, 60, 100, 150, 200)
+
+true = 2
+
+left = numeric(length(n_values))
+trap = numeric(length(n_values))
+simp = numeric(length(n_values))
+
+error_left = numeric(length(n_values))
+error_trap = numeric(length(n_values))
+error_simp = numeric(length(n_values))
+
+for (i in 1:length(n_values)){
+  n = n_values[i]
+  
+  left[i] = left_rectangle(f, a, b, n)
+  trap[i] = trapezoid(f, a, b, n)
+  simp[i] = simpson(f, a, b, n)
+}
+```
+
+```{r}
+for (i in 1:length(n_values)){
+  error_left[i] = abs(left[i] - true)
+  error_trap[i] = abs(trap[i] - true)
+  error_simp[i] = abs(simp[i] - true)
+}
+```
+
+```{r}
+results = data.frame(n = rep(n_values, 3),
+                     error = c(error_left, error_trap, error_simp),
+                     method = rep(c("Left Rectangle", "Trapezoid", "Simpson"), each = length(n_values)))
+
+ggplot(results, aes(n, error, color = method)) +
+  geom_line(linewidth = 1) + 
+  geom_point(size = 2) +
+  labs(x = "n", y = "absolute erroe", color = "method") +
+  theme_minimal()
+```
+5-(a)
+```{r}
+A = matrix(c(4, 2, 2, 2, 5, 1, 2, 1, 3), 3)
+
+U = chol(A)
+L = t(U)
+
+print(L %*% t(L))
+print(A)
+```
+5-(b)
+```{r}
+forward = function(L, b){
+  n = length(b)
+  z = numeric(n)
+  
+  for (i in 1:n){
+    sum = 0
+    
+    if (i > 1){
+      for (j in 1:(n-1)){
+      sum = sum + L[i, j] * z[j]
+      }
+    }
+    
+    z[i] = (b[i] - sum) / L[i, i]
+  }
+  
+  return(z)
+}
+```
+
+5-(c)
+```{r}
+backward = function(L, z){
+  n = length(z)
+  x = numeric(n)
+  
+  for (i in n:1){
+    sum = 0
+    
+    if (i < n){
+    
+    for (j in (i+1):n){
+      sum = sum + L[j, i] * x[j]
+      }
+    }
+    
+    x[i] = (z[i] - sum) / L[i, i]
+    
+  }
+  
+  return(x)
+}
+```
+
+5-(d)
+```{r}
+A = matrix(c(4, 2, 2, 2, 5, 1, 2, 1, 3), 3)
+b = c(1, -2, 3)
+
+L = t(chol(A))
+```
+
+```{r}
+solve(A, b)
+```
+```{r}
+z = forward(L, b)
+backward(L, z)
+```
+6-(a)
+```{r}
+gaussian_kernel = function(x1, x2, rho){
+  result = exp(-rho * (x1 - x2)^2)
+  return(result)
+}
+```
+
+6-(b)
+```{r}
+krr = function(x, y, rho, lambda){
+  n = nrow(x)
+  k = matrix(0, n, n)
+  
+  for (i in 1:n){
+    for (j in 1:n){
+      k[i, j] = gaussian_kernel(x[i, 1], x[j, 1], rho)
+    }
+  }
+  
+  alpha = solve(k + lambda * diag(n), y)
+  
+  result = list(x = x, y = y, alpha = alpha, rho = rho, lambda = lambda)
+  class(result) = "krr"
+  
+  return(result)
+}
+```
+
+6-(c)
+```{r}
+predict.krr = function(object, data, ...){
+  x = object$x
+  alpha = object$alpha
+  rho = object$rho
+  
+  data = as.matrix(data)
+  
+  n = nrow(x)
+  m = nrow(data)
+  
+  new = matrix(0, m, n)
+  
+  for (i in 1:m){
+    for (j in 1:n){
+      new[i, j] = gaussian_kernel(data[i,1], x[j, 1], rho)
+    }
+  }
+  
+  y_pred = new %*% alpha
+  
+  return(as.numeric(y_pred))
+}
+```
+
+6-(d)
+```{r}
+plot.krr = function(x, ...){
+  x_grid = matrix(seq(min(x$x), max(x$x), length.out = 200), ncol = 1)
+  
+  y_pred = predict(x, x_grid)
+  
+  point = data.frame(
+    x = x$x[, 1], y = x$y
+  )
+  
+  line = data.frame(
+    x = x_grid[, 1], y = y_pred
+  )
+  
+  ggplot() +
+    geom_point(data = point, aes(x, y), color = "black") +
+    geom_line(data = line, aes(x, y), color = "blue", linewidth = 1) +
+    labs(x = "x", y = "y") +
+    theme_minimal()
+}
+```
+
+6-(e)
+```{r}
+set.seed(1)
+rho = 1
+lambda = 0.0001
+n = 150
+X = matrix(runif(n, -1, 1), ncol = 1)
+ftrue = function(x) sin(2*pi*x) + 0.5*cos(4*pi*x)
+y = ftrue(X[, 1]) + rnorm(n, sd = 0.1)
+```
+
+```{r}
+model = krr(X, y, rho, lambda)
+
+x_new = matrix(seq(-1, 1, length.out = 200), ncol = 1)
+y_pred = predict(model, x_new)
+plot(model)
+```
+
 
